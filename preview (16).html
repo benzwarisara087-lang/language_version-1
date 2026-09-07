@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>เกมปริศนาคำทาย ป.3</title>
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;font-family:"Tahoma","Sarabun",sans-serif;background:linear-gradient(135deg,#fff7d6,#e8f8ff);color:#263238;min-height:100vh}
+  .wrap{max-width:1100px;margin:auto;padding:16px}
+  header{background:#fff;border:4px solid #ffd54f;border-radius:24px;padding:16px;text-align:center;box-shadow:0 6px 18px #0001}
+  h1{margin:0;font-size:clamp(30px,5vw,52px);color:#ef6c00}
+  .subtitle{font-size:clamp(18px,3vw,26px);margin-top:5px;font-weight:bold}
+  .toolbar{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin:14px 0}
+  button{min-height:48px;border:0;border-radius:14px;padding:10px 18px;font-size:20px;font-weight:bold;cursor:pointer;box-shadow:0 4px 10px #0002}
+  button:disabled{opacity:.55;cursor:not-allowed}
+  .btn{background:#42a5f5;color:#fff}.btn2{background:#66bb6a;color:#fff}.btn3{background:#ab47bc;color:#fff}
+  .panel{background:#ffffffee;border-radius:22px;padding:18px;box-shadow:0 6px 20px #0002;margin-top:12px}
+  .status{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;font-size:22px;font-weight:bold}
+  .unit{display:inline-block;background:#fff3cd;border-radius:12px;padding:6px 12px}
+  .question{font-size:clamp(25px,4vw,38px);font-weight:bold;line-height:1.45;text-align:center;margin:20px auto;max-width:900px}
+  .answers{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+  .answer{background:#fff;border:4px solid #90caf9;border-radius:20px;min-height:180px;padding:12px;transition:.15s}
+  .answer:hover{transform:translateY(-3px);background:#f3fbff}
+  .answer .pic{font-size:75px;line-height:1.1;display:block;margin:4px}
+  .answer .label{font-size:clamp(22px,3vw,30px)}
+  .answer.correct{border-color:#43a047;background:#e8f5e9}
+  .answer.wrong{border-color:#e53935;background:#ffebee}
+  .feedback{min-height:80px;margin-top:16px;border-radius:18px;padding:14px;text-align:center;font-size:clamp(20px,3vw,28px);font-weight:bold}
+  .good{background:#e8f5e9;color:#1b5e20}.bad{background:#ffebee;color:#b71c1c}
+  .summary{display:none;text-align:center}
+  .summary h2{font-size:38px;color:#7b1fa2}
+  .scorebig{font-size:64px;font-weight:bold;color:#ef6c00}
+  .unitbuttons{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin:12px 0}
+  .unitbuttons button{background:#ffb300;color:#fff}
+  .tip{font-size:18px;text-align:center;margin-top:10px;color:#546e7a}
+  .modal{display:none;position:fixed;inset:0;background:#0008;z-index:10;align-items:center;justify-content:center;padding:20px}
+  .modalbox{background:white;border-radius:24px;max-width:720px;width:100%;padding:22px;max-height:85vh;overflow:auto}
+  .modalbox h2{font-size:34px;color:#1565c0}
+  .modalbox p,.modalbox li{font-size:20px;line-height:1.6}
+  .close{background:#78909c;color:#fff}
+  @media(max-width:700px){.answers{grid-template-columns:1fr}.answer{min-height:125px;display:flex;align-items:center;gap:12px;text-align:left}.answer .pic{font-size:58px}.question{margin:12px auto}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <h1>🔎 ปริศนาคำทาย</h1>
+  <div class="subtitle">ภาษาไทย ป.3 • อะไรเอ่ย? ทายให้ถูก!</div>
+</header>
+
+<div class="toolbar">
+  <button class="btn" id="summaryBtn">📊 สรุปข้อมูล</button>
+  <button class="btn2" id="restartBtn">🔄 เริ่มใหม่</button>
+  <button class="btn3" id="soundBtn">🔊 เสียง: เปิด</button>
+</div>
+
+<div class="unitbuttons" id="unitButtons"></div>
+
+<section class="panel" id="gamePanel">
+  <div class="status">
+    <span class="unit" id="unitLabel">หน่วยที่ 1 ของใช้</span>
+    <span id="progress">ข้อ 1 / 15</span>
+    <span>คะแนน <b id="score">0</b></span>
+  </div>
+  <div class="question" id="question">กำลังเตรียมคำถาม...</div>
+  <div class="answers" id="answers"></div>
+  <div class="feedback" id="feedback"></div>
+  <div class="tip">👩‍🏫 ครูเป็นผู้กดเลือกคำตอบ เด็ก ๆ ช่วยกันคิดและตอบ</div>
+</section>
+
+<section class="panel summary" id="summaryPanel">
+  <h2>🎉 สรุปผลการเล่น</h2>
+  <div class="scorebig" id="finalScore">0 / 15</div>
+  <p id="finalText" style="font-size:25px;font-weight:bold"></p>
+  <button class="btn2" id="playAgainBtn">▶️ เล่นใหม่</button>
+</section>
+</div>
+
+<div class="modal" id="modal">
+  <div class="modalbox">
+    <h2>📊 ข้อมูลเกม</h2>
+    <p><b>เรื่อง:</b> ปริศนาคำทาย | <b>วิชา:</b> ภาษาไทย | <b>ชั้น:</b> ป.3</p>
+    <ul>
+      <li>มี 4 หน่วย หน่วยละ 15 ข้อ</li>
+      <li>เลือกคำตอบได้ 3 ตัวเลือก พร้อมภาพการ์ตูนน่ารักแบบอีโมจิ</li>
+      <li>ตอบถูกได้ 1 คะแนน ตอบผิดไม่หักคะแนน</li>
+      <li>มีเสียงตอบถูก/ผิดจาก Web Audio ในตัว ไม่ใช้ไฟล์ภายนอก</li>
+      <li>คำถามจะสุ่มและไม่ซ้ำจนกว่าจะครบ 15 ข้อของหน่วยนั้น</li>
+    </ul>
+    <button class="close" id="closeModal">ปิด</button>
+  </div>
+</div>
+
+<script>
+/* =========================================================
+   ครูแก้คำถามได้ตรงนี้
+   - QUESTIONS คือคลังคำถามทั้งหมด
+   - unit = หน่วยที่ 1, 2, 3 หรือ 4
+   - answer = คำตอบที่ถูกต้อง ต้องตรงกับตัวเลือกหนึ่งตัว
+   - options แต่ละตัวมี text (ชื่อคำตอบ) และ icon (ภาพการ์ตูน)
+   - explanation คือคำอธิบายสั้น ๆ หลังตอบ
+   ========================================================= */
+const QUESTIONS = [
+/* หน่วยที่ 1 : ของใช้ (15 ข้อ) */
+{unit:1,question:"อะไรเอ่ย? มีใบพัดหมุน ช่วยพัดลมให้เย็นสบาย อยู่ในบ้านบ่อย ๆ",answer:"พัดลม",options:[["พัดลม","🌀"],["ร่ม","☂️"],["หมอน","🛏️"]],explanation:"ถูกต้อง! พัดลมมีใบพัดช่วยให้อากาศหมุนเวียนและรู้สึกเย็นสบาย"},
+{unit:1,question:"อะไรเอ่ย? มีขา 4 ขา ใช้นั่ง ไม่ใช่สัตว์",answer:"เก้าอี้",options:[["เก้าอี้","🪑"],["ทีวี","📺"],["กระจก","🪞"]],explanation:"ถูกต้อง! เก้าอี้เป็นของใช้สำหรับนั่ง"},
+{unit:1,question:"อะไรเอ่ย? ด้ามยาว มีเส้นแข็ง ๆ รวมกัน ใช้กวาดฝุ่นบนพื้น",answer:"ไม้กวาด",options:[["ไม้กวาด","🧹"],["กรรไกร","✂️"],["ดินสอ","✏️"]],explanation:"ถูกต้อง! ไม้กวาดใช้กวาดพื้นให้สะอาด"},
+{unit:1,question:"อะไรเอ่ย? ใส่ที่เท้า เดินไปไหนก็ต้องสวม",answer:"รองเท้า",options:[["รองเท้า","👟"],["สบู่","🧼"],["ยางลบ","🧽"]],explanation:"ถูกต้อง! รองเท้าใช้สวมเท้าเพื่อป้องกันเท้าและช่วยในการเดิน"},
+{unit:1,question:"อะไรเอ่ย? ใช้ถูรอยดินสอให้หายจากกระดาษ",answer:"ยางลบ",options:[["ยางลบ","◻️"],["หมอน","🛏️"],["ร่ม","☂️"]],explanation:"ถูกต้อง! ยางลบใช้ลบรอยดินสอ"},
+{unit:1,question:"อะไรเอ่ย? นุ่ม ๆ วางบนที่นอน ใช้หนุนศีรษะเวลานอน",answer:"หมอน",options:[["หมอน","🛏️"],["พัดลม","🌀"],["ทีวี","📺"]],explanation:"ถูกต้อง! หมอนใช้รองรับศีรษะขณะนอน"},
+{unit:1,question:"อะไรเอ่ย? ใช้ถูตัวตอนอาบน้ำ ทำให้ร่างกายสะอาด",answer:"สบู่",options:[["สบู่","🧼"],["กระจก","🪞"],["ดินสอ","✏️"]],explanation:"ถูกต้อง! สบู่ใช้ทำความสะอาดร่างกาย"},
+{unit:1,question:"อะไรเอ่ย? มีจอ ใช้ดูรายการและภาพต่าง ๆ",answer:"ทีวี",options:[["ทีวี","📺"],["เก้าอี้","🪑"],["กรรไกร","✂️"]],explanation:"ถูกต้อง! ทีวีมีจอสำหรับรับชมรายการและภาพ"},
+{unit:1,question:"อะไรเอ่ย? มีคมสองด้าน ใช้ตัดกระดาษ",answer:"กรรไกร",options:[["กรรไกร","✂️"],["ไม้กวาด","🧹"],["รองเท้า","👟"]],explanation:"ถูกต้อง! กรรไกรใช้สำหรับตัดสิ่งของ เช่น กระดาษ"},
+{unit:1,question:"อะไรเอ่ย? มีขนเล็ก ๆ ใช้ทำความสะอาดฟันทุกวัน",answer:"แปรงสีฟัน",options:[["แปรงสีฟัน","🪥"],["สบู่","🧼"],["ยางลบ","◻️"]],explanation:"ถูกต้อง! แปรงสีฟันใช้ทำความสะอาดฟัน"},
+{unit:1,question:"อะไรเอ่ย? กางออกได้ ใช้บังฝนเมื่อฝนตก",answer:"ร่ม",options:[["ร่ม","☂️"],["หมอน","🛏️"],["ทีวี","📺"]],explanation:"ถูกต้อง! ร่มใช้กางเพื่อกันฝน"},
+{unit:1,question:"อะไรเอ่ย? มีผิวสะท้อนภาพ เวลาแต่งตัวมักส่องดู",answer:"กระจก",options:[["กระจก","🪞"],["เก้าอี้","🪑"],["ดินสอ","✏️"]],explanation:"ถูกต้อง! กระจกสะท้อนภาพของเราให้มองเห็นตัวเอง"},
+{unit:1,question:"อะไรเอ่ย? ตัวใหญ่ มีบานประตู ใช้เก็บเสื้อผ้า",answer:"ตู้เสื้อผ้า",options:[["ตู้เสื้อผ้า","🚪"],["พัดลม","🌀"],["รองเท้า","👟"]],explanation:"ถูกต้อง! ตู้เสื้อผ้าใช้เก็บเสื้อผ้าให้เป็นระเบียบ"},
+{unit:1,question:"อะไรเอ่ย? ตัวเล็ก มีไส้ ใช้เขียนตัวหนังสือ",answer:"ดินสอ",options:[["ดินสอ","✏️"],["กรรไกร","✂️"],["ไม้กวาด","🧹"]],explanation:"ถูกต้อง! ดินสอใช้เขียนหรือวาดภาพ"},
+{unit:1,question:"อะไรเอ่ย? ใช้สวมเท้าเป็นคู่ ช่วยป้องกันเท้าจากพื้น",answer:"รองเท้า",options:[["รองเท้า","👟"],["ร่ม","☂️"],["กระจก","🪞"]],explanation:"ถูกต้อง! รองเท้าใช้สวมเท้าและช่วยป้องกันเท้า"},
+
+/* หน่วยที่ 2 : สัตว์ (15 ข้อ) */
+{unit:2,question:"อะไรเอ่ย? ร้องเหมียว ๆ ชอบจับหนู และมีหนวด",answer:"แมว",options:[["แมว","🐱"],["สุนัข","🐶"],["ลิง","🐵"]],explanation:"ถูกต้อง! แมวร้องเหมียวและมีหนวด"},
+{unit:2,question:"อะไรเอ่ย? หูยาว กระโดดเก่ง ชอบกินผัก",answer:"กระต่าย",options:[["กระต่าย","🐰"],["กบ","🐸"],["กวาง","🦌"]],explanation:"ถูกต้อง! กระต่ายมีหูยาวและกระโดดได้ดี"},
+{unit:2,question:"อะไรเอ่ย? เห่าโฮ่ง ๆ ซื่อสัตย์และชอบเฝ้าบ้าน",answer:"สุนัข",options:[["สุนัข","🐶"],["แมว","🐱"],["ไก่","🐔"]],explanation:"ถูกต้อง! สุนัขมักเห่าและช่วยเฝ้าบ้าน"},
+{unit:2,question:"อะไรเอ่ย? ตัวใหญ่ มีลายพาดตัว เป็นสัตว์นักล่า",answer:"เสือ",options:[["เสือ","🐯"],["ยีราฟ","🦒"],["ช้าง","🐘"]],explanation:"ถูกต้อง! เสือมีลายและเป็นสัตว์นักล่า"},
+{unit:2,question:"อะไรเอ่ย? คอยาวมาก มีลายเป็นปื้น ๆ ชอบกินใบไม้บนต้นสูง",answer:"ยีราฟ",options:[["ยีราฟ","🦒"],["ม้า","🐴"],["ช้าง","🐘"]],explanation:"ถูกต้อง! ยีราฟมีคอยาว จึงกินใบไม้บนต้นสูงได้"},
+{unit:2,question:"อะไรเอ่ย? ตัวใหญ่ หูใหญ่ มีงวง และชอบกินพืช",answer:"ช้าง",options:[["ช้าง","🐘"],["เสือ","🐯"],["ลิง","🐵"]],explanation:"ถูกต้อง! ช้างมีงวงและหูใหญ่"},
+{unit:2,question:"อะไรเอ่ย? อาศัยอยู่ในน้ำ มีครีบ ใช้หางช่วยว่ายน้ำ",answer:"ปลา",options:[["ปลา","🐟"],["งู","🐍"],["ปู","🦀"]],explanation:"ถูกต้อง! ปลามีครีบและอาศัยอยู่ในน้ำ"},
+{unit:2,question:"อะไรเอ่ย? ไม่มีขา เลื้อยไปมา บางชนิดมีพิษ",answer:"งู",options:[["งู","🐍"],["ปลา","🐟"],["กบ","🐸"]],explanation:"ถูกต้อง! งูไม่มีขาและเคลื่อนที่ด้วยการเลื้อย"},
+{unit:2,question:"อะไรเอ่ย? ชอบปีนต้นไม้ มีแขนขายาว และชอบกินผลไม้",answer:"ลิง",options:[["ลิง","🐵"],["แมว","🐱"],["ปู","🦀"]],explanation:"ถูกต้อง! ลิงปีนต้นไม้เก่งและกินผลไม้หลายชนิด"},
+{unit:2,question:"อะไรเอ่ย? เดินด้านข้าง มีขา 8 ขา และมีก้าม",answer:"ปู",options:[["ปู","🦀"],["มด","🐜"],["ปลา","🐟"]],explanation:"ถูกต้อง! ปูมีก้ามและมักเดินด้านข้าง"},
+{unit:2,question:"อะไรเอ่ย? ออกหากินตอนกลางคืน บินได้ และใช้เสียงช่วยหาเส้นทาง",answer:"ค้างคาว",options:[["ค้างคาว","🦇"],["นก","🐦"],["ไก่","🐔"]],explanation:"ถูกต้อง! ค้างคาวออกหากินกลางคืนและบินได้"},
+{unit:2,question:"อะไรเอ่ย? กระโดดได้ ร้องอ๊บ ๆ และชอบอยู่ใกล้น้ำ",answer:"กบ",options:[["กบ","🐸"],["กระต่าย","🐰"],["งู","🐍"]],explanation:"ถูกต้อง! กบกระโดดและร้องอ๊บ ๆ"},
+{unit:2,question:"อะไรเอ่ย? ตัวเล็กมาก อยู่เป็นกลุ่ม ช่วยกันหาอาหาร",answer:"มด",options:[["มด","🐜"],["ปู","🦀"],["แมว","🐱"]],explanation:"ถูกต้อง! มดตัวเล็กและมักทำงานร่วมกันเป็นกลุ่ม"},
+{unit:2,question:"อะไรเอ่ย? ขันเอ้กอีเอ้กตอนเช้า มีปีกแต่บินได้ไม่ไกล",answer:"ไก่",options:[["ไก่","🐔"],["นก","🐦"],["ค้างคาว","🦇"]],explanation:"ถูกต้อง! ไก่ตัวผู้ขันในตอนเช้า"},
+{unit:2,question:"อะไรเอ่ย? มีปีก มีขน และบินอยู่บนท้องฟ้าได้",answer:"นก",options:[["นก","🐦"],["กบ","🐸"],["ช้าง","🐘"]],explanation:"ถูกต้อง! นกมีปีกและขน และนกหลายชนิดบินได้"},
+
+/* หน่วยที่ 3 : ผลไม้ (15 ข้อ) */
+{unit:3,question:"อะไรเอ่ย? เปลือกสีส้ม แกะเป็นกลีบ ๆ รสหวานอมเปรี้ยว",answer:"ส้ม",options:[["ส้ม","🍊"],["องุ่น","🍇"],["แอปเปิล","🍎"]],explanation:"ถูกต้อง! ส้มมีเปลือกสีส้มและแบ่งเป็นกลีบ"},
+{unit:3,question:"อะไรเอ่ย? ออกเป็นพวง ลูกเล็ก ๆ หลายลูก สีเขียวหรือม่วง",answer:"องุ่น",options:[["องุ่น","🍇"],["ลำไย","🟤"],["มะม่วง","🥭"]],explanation:"ถูกต้อง! องุ่นออกเป็นพวงและมีหลายสี"},
+{unit:3,question:"อะไรเอ่ย? ลูกใหญ่ เปลือกเขียว เนื้อแดง มีเมล็ดสีดำ ช่วยดับกระหาย",answer:"แตงโม",options:[["แตงโม","🍉"],["สับปะรด","🍍"],["มะพร้าว","🥥"]],explanation:"ถูกต้อง! แตงโมมีเนื้อฉ่ำน้ำและช่วยให้สดชื่น"},
+{unit:3,question:"อะไรเอ่ย? เปลือกมีหนามแหลม ๆ เนื้อสีเหลือง มีกลิ่นเฉพาะตัว",answer:"สับปะรด",options:[["สับปะรด","🍍"],["ทุเรียน","🌰"],["มะพร้าว","🥥"]],explanation:"ถูกต้อง! สับปะรดมีเปลือกเป็นตาและมีหนามเล็ก ๆ"},
+{unit:3,question:"อะไรเอ่ย? ผลกลม เปลือกแข็ง มีน้ำอยู่ข้างใน",answer:"มะพร้าว",options:[["มะพร้าว","🥥"],["ส้มโอ","🍈"],["มังคุด","🟣"]],explanation:"ถูกต้อง! มะพร้าวมีน้ำและเนื้ออยู่ภายในผล"},
+{unit:3,question:"อะไรเอ่ย? ผลใหญ่ เปลือกหนา แกะแล้วเป็นกลีบ รสหวานอมเปรี้ยว",answer:"ส้มโอ",options:[["ส้มโอ","🍈"],["ส้ม","🍊"],["กีวี","🥝"]],explanation:"ถูกต้อง! ส้มโอมีผลใหญ่และเนื้อแบ่งเป็นกลีบ"},
+{unit:3,question:"อะไรเอ่ย? ผลยาว เปลือกเขียวหรือเหลือง เนื้อหวานและมีกลิ่นหอม",answer:"มะม่วง",options:[["มะม่วง","🥭"],["กล้วย","🍌"],["มะละกอ","🍈"]],explanation:"ถูกต้อง! มะม่วงมีรูปร่างยาวและเนื้อหวานเมื่อสุก"},
+{unit:3,question:"อะไรเอ่ย? ออกเป็นหวี เปลือกเหลืองเมื่อสุก เนื้อนุ่ม",answer:"กล้วย",options:[["กล้วย","🍌"],["องุ่น","🍇"],["เงาะ","🔴"]],explanation:"ถูกต้อง! กล้วยออกเป็นหวีและเปลือกมักเปลี่ยนเป็นสีเหลืองเมื่อสุก"},
+{unit:3,question:"อะไรเอ่ย? ผลยาวรี เนื้อสีส้ม มีเมล็ดดำจำนวนมาก",answer:"มะละกอ",options:[["มะละกอ","🍈"],["แอปเปิล","🍎"],["แตงโม","🍉"]],explanation:"ถูกต้อง! มะละกอสุกมีเนื้อสีส้มและเมล็ดสีดำ"},
+{unit:3,question:"อะไรเอ่ย? เปลือกสีน้ำตาลมีขน เนื้อสีเขียว มีเมล็ดเล็ก ๆ",answer:"กีวี",options:[["กีวี","🥝"],["ส้ม","🍊"],["มังคุด","🟣"]],explanation:"ถูกต้อง! กีวีมีเปลือกสีน้ำตาลและเนื้อสีเขียว"},
+{unit:3,question:"อะไรเอ่ย? กลม สีแดงหรือเขียว กรอบและมีรสหวานอมเปรี้ยว",answer:"แอปเปิล",options:[["แอปเปิล","🍎"],["ลำไย","🟤"],["มะเฟือง","⭐"]],explanation:"ถูกต้อง! แอปเปิลมีเนื้อกรอบและมีหลายสี"},
+{unit:3,question:"อะไรเอ่ย? ผลเล็ก เปลือกสีน้ำตาล เนื้อใสหวาน มีเมล็ดดำ",answer:"ลำไย",options:[["ลำไย","🟤"],["เงาะ","🔴"],["องุ่น","🍇"]],explanation:"ถูกต้อง! ลำไยมีเปลือกสีน้ำตาลและเนื้อใส"},
+{unit:3,question:"อะไรเอ่ย? เปลือกมีหนาม เนื้อสีเหลือง กลิ่นแรง คนไทยเรียกว่าราชาผลไม้",answer:"ทุเรียน",options:[["ทุเรียน","🌰"],["สับปะรด","🍍"],["มะม่วง","🥭"]],explanation:"ถูกต้อง! ทุเรียนมีเปลือกเป็นหนามและเนื้อสีเหลือง"},
+{unit:3,question:"อะไรเอ่ย? เมื่อตัดขวางเห็นรูปคล้ายดาว มีรสหวานอมเปรี้ยว",answer:"มะเฟือง",options:[["มะเฟือง","⭐"],["ส้มโอ","🍈"],["กีวี","🥝"]],explanation:"ถูกต้อง! มะเฟืองมีสัน เมื่อตัดขวางจะเห็นเป็นรูปดาว"},
+{unit:3,question:"อะไรเอ่ย? เปลือกมีขนสีแดง เนื้อขาวฉ่ำน้ำ เมล็ดอยู่ตรงกลาง",answer:"เงาะ",options:[["เงาะ","🔴"],["มังคุด","🟣"],["ลำไย","🟤"]],explanation:"ถูกต้อง! เงาะมีเปลือกสีแดงมีขนและเนื้อสีขาว"},
+
+/* หน่วยที่ 4 : อาชีพ (15 ข้อ) */
+{unit:4,question:"อะไรเอ่ย? สวมเครื่องแบบ ปกป้องประเทศ และฝึกความแข็งแรง",answer:"ทหาร",options:[["ทหาร","🪖"],["ครู","👩‍🏫"],["ตำรวจ","👮"]],explanation:"ถูกต้อง! ทหารมีหน้าที่ปกป้องประเทศ"},
+{unit:4,question:"อะไรเอ่ย? ยืนหน้าห้อง สอนหนังสือและดูแลนักเรียน",answer:"ครู",options:[["ครู","👩‍🏫"],["แพทย์","🧑‍⚕️"],["พ่อค้า","🧑‍💼"]],explanation:"ถูกต้อง! ครูมีหน้าที่จัดการเรียนรู้และดูแลนักเรียน"},
+{unit:4,question:"อะไรเอ่ย? ดูแลความสงบ ช่วยจับผู้กระทำผิด และสวมเครื่องแบบ",answer:"ตำรวจ",options:[["ตำรวจ","👮"],["ทหาร","🪖"],["ชาวนา","👨‍🌾"]],explanation:"ถูกต้อง! ตำรวจดูแลความสงบและบังคับใช้กฎหมาย"},
+{unit:4,question:"อะไรเอ่ย? ซื้อของมาขายให้ลูกค้า พูดคุยและคิดเงิน",answer:"พ่อค้า",options:[["พ่อค้า","🧑‍💼"],["ช่างยนต์","🧑‍🔧"],["ชาวประมง","🎣"]],explanation:"ถูกต้อง! พ่อค้าทำหน้าที่ขายสินค้าให้ลูกค้า"},
+{unit:4,question:"อะไรเอ่ย? รักษาสัตว์ที่เจ็บป่วย เช่น สุนัข แมว และนก",answer:"สัตวแพทย์",options:[["สัตวแพทย์","🐾"],["แพทย์","🧑‍⚕️"],["หมอฟัน","🦷"]],explanation:"ถูกต้อง! สัตวแพทย์ดูแลและรักษาสัตว์"},
+{unit:4,question:"อะไรเอ่ย? ตรวจรักษาคนที่เจ็บป่วยและช่วยให้หายดี",answer:"แพทย์",options:[["แพทย์","🧑‍⚕️"],["พยาบาล","👩‍⚕️"],["ครู","👩‍🏫"]],explanation:"ถูกต้อง! แพทย์ตรวจ วินิจฉัย และรักษาผู้ป่วย"},
+{unit:4,question:"อะไรเอ่ย? ออกเรือหรือใช้เครื่องมือจับปลาเพื่อหาเลี้ยงชีพ",answer:"ชาวประมง",options:[["ชาวประมง","🎣"],["ชาวนา","👨‍🌾"],["พ่อค้า","🧑‍💼"]],explanation:"ถูกต้อง! ชาวประมงประกอบอาชีพจับสัตว์น้ำ"},
+{unit:4,question:"อะไรเอ่ย? ปลูกข้าว ดูแลต้นข้าว และเก็บเกี่ยวผลผลิต",answer:"ชาวนา",options:[["ชาวนา","👨‍🌾"],["ช่างไฟฟ้า","🧑‍🔧"],["ทหาร","🪖"]],explanation:"ถูกต้อง! ชาวนาปลูกและดูแลข้าวเพื่อเก็บเกี่ยว"},
+{unit:4,question:"อะไรเอ่ย? ตรวจฟัน ถอนฟัน และสอนให้เราแปรงฟันให้สะอาด",answer:"หมอฟัน",options:[["หมอฟัน","🦷"],["แพทย์","🧑‍⚕️"],["พยาบาล","👩‍⚕️"]],explanation:"ถูกต้อง! หมอฟันหรือทันตแพทย์ดูแลสุขภาพช่องปากและฟัน"},
+{unit:4,question:"อะไรเอ่ย? ช่วยดูแลผู้ป่วย วัดอุณหภูมิ และให้การพยาบาล",answer:"พยาบาล",options:[["พยาบาล","👩‍⚕️"],["ครู","👩‍🏫"],["สัตวแพทย์","🐾"]],explanation:"ถูกต้อง! พยาบาลช่วยดูแลผู้ป่วยและให้การพยาบาล"},
+{unit:4,question:"อะไรเอ่ย? ทำงานเกี่ยวกับสายไฟ ติดตั้งและซ่อมระบบไฟฟ้า",answer:"ช่างไฟฟ้า",options:[["ช่างไฟฟ้า","💡"],["ช่างยนต์","🧑‍🔧"],["พ่อค้า","🧑‍💼"]],explanation:"ถูกต้อง! ช่างไฟฟ้าติดตั้ง ตรวจสอบ และซ่อมระบบไฟฟ้า"},
+{unit:4,question:"อะไรเอ่ย? ซ่อมเครื่องยนต์ เปลี่ยนน้ำมันเครื่อง และดูแลรถ",answer:"ช่างยนต์",options:[["ช่างยนต์","🧑‍🔧"],["ช่างไฟฟ้า","💡"],["ตำรวจ","👮"]],explanation:"ถูกต้อง! ช่างยนต์ดูแลและซ่อมแซมรถยนต์"},
+{unit:4,question:"อะไรเอ่ย? ทำงานกับผู้ป่วยในโรงพยาบาล และช่วยดูแลตามคำแนะนำของทีมแพทย์",answer:"พยาบาล",options:[["พยาบาล","👩‍⚕️"],["พ่อค้า","🧑‍💼"],["ชาวนา","👨‍🌾"]],explanation:"ถูกต้อง! พยาบาลเป็นบุคลากรสำคัญในการดูแลผู้ป่วย"},
+{unit:4,question:"อะไรเอ่ย? รักษาคนที่ป่วยและให้คำแนะนำเกี่ยวกับสุขภาพ",answer:"แพทย์",options:[["แพทย์","🧑‍⚕️"],["สัตวแพทย์","🐾"],["หมอฟัน","🦷"]],explanation:"ถูกต้อง! แพทย์ดูแลรักษาสุขภาพของคน"},
+{unit:4,question:"อะไรเอ่ย? ทำงานกับเครื่องยนต์และชิ้นส่วนรถ เมื่อรถเสียมักไปหาเขา",answer:"ช่างยนต์",options:[["ช่างยนต์","🧑‍🔧"],["ครู","👩‍🏫"],["ชาวประมง","🎣"]],explanation:"ถูกต้อง! ช่างยนต์เชี่ยวชาญด้านการตรวจและซ่อมเครื่องยนต์"}
+];
+
+const UNIT_NAMES={1:"หน่วยที่ 1 • ของใช้",2:"หน่วยที่ 2 • สัตว์",3:"หน่วยที่ 3 • ผลไม้",4:"หน่วยที่ 4 • อาชีพ"};
+let currentUnit=1, pool=[], current=null, index=0, score=0, locked=false, soundOn=true;
+let audioCtx=null;
+
+const $=id=>document.getElementById(id);
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function makePool(){pool=shuffle(QUESTIONS.filter(q=>q.unit===currentUnit).slice());index=0;score=0;current=null;locked=false;$("summaryPanel").style.display="none";$("gamePanel").style.display="block";render()}
+function playTone(ok){
+  if(!soundOn)return;
+  try{
+    audioCtx=audioCtx||new (window.AudioContext||window.webkitAudioContext)();
+    const o=audioCtx.createOscillator(),g=audioCtx.createGain();
+    o.connect(g);g.connect(audioCtx.destination);
+    o.frequency.value=ok?660:220;o.type=ok?"sine":"triangle";
+    g.gain.setValueAtTime(.0001,audioCtx.currentTime);
+    g.gain.exponentialRampToValueAtTime(.16,audioCtx.currentTime+.02);
+    g.gain.exponentialRampToValueAtTime(.0001,audioCtx.currentTime+.22);
+    o.start();o.stop(audioCtx.currentTime+.24);
+  }catch(e){}
+}
+function render(){
+  if(index>=pool.length){finish();return}
+  current=pool[index];
+  $("unitLabel").textContent=UNIT_NAMES[currentUnit];
+  $("progress").textContent=`ข้อ ${index+1} / ${pool.length}`;
+  $("score").textContent=score;
+  $("question").textContent=current.question;
+  $("feedback").textContent="";
+  $("feedback").className="feedback";
+  const shuffled=shuffle(current.options.map(x=>({text:x[0],icon:x[1]})));
+  $("answers").innerHTML="";
+  shuffled.forEach(opt=>{
+    const b=document.createElement("button");
+    b.className="answer";
+    b.innerHTML=`<span class="pic">${opt.icon}</span><span class="label">${opt.text}</span>`;
+    b.onclick=()=>answer(opt.text,b);
+    $("answers").appendChild(b);
+  });
+}
+function answer(text,btn){
+  if(locked)return;
+  locked=true;
+  const correct=text===current.answer;
+  if(correct)score++;
+  playTone(correct);
+  document.querySelectorAll(".answer").forEach(b=>b.disabled=true);
+  if(correct){btn.classList.add("correct");$("feedback").className="feedback good";$("feedback").textContent="🎉 ถูกต้อง! "+current.explanation}
+  else{
+    btn.classList.add("wrong");
+    const all=[...document.querySelectorAll(".answer")];
+    const right=all.find(b=>b.querySelector(".label").textContent===current.answer);
+    if(right)right.classList.add("correct");
+    $("feedback").className="feedback bad";
+    $("feedback").textContent="🙂 ยังไม่ใช่ เฉลยคือ “"+current.answer+"” — "+current.explanation;
+  }
+  setTimeout(()=>{index++;locked=false;render()},1100);
+}
+function finish(){
+  $("gamePanel").style.display="none";$("summaryPanel").style.display="block";
+  $("finalScore").textContent=`${score} / ${pool.length}`;
+  $("finalText").textContent=score>=13?"🌟 เก่งมาก! ทายได้ยอดเยี่ยม":score>=9?"👏 เก่งมาก! ลองทบทวนอีกนิด":"💪 ไม่เป็นไร ลองเล่นใหม่แล้วช่วยกันคิดนะ";
+}
+function startUnit(u){currentUnit=u;makePool()}
+$("restartBtn").onclick=()=>makePool();
+$("playAgainBtn").onclick=()=>makePool();
+$("summaryBtn").onclick=()=>{$("modal").style.display="flex"};
+$("closeModal").onclick=()=>{$("modal").style.display="none"};
+$("soundBtn").onclick=()=>{soundOn=!soundOn;$("soundBtn").textContent=soundOn?"🔊 เสียง: เปิด":"🔇 เสียง: ปิด"};
+window.addEventListener("click",e=>{if(e.target===$("modal"))$("modal").style.display="none"});
+
+[1,2,3,4].forEach(u=>{
+  const b=document.createElement("button");b.textContent=UNIT_NAMES[u];b.onclick=()=>startUnit(u);$("unitButtons").appendChild(b);
+});
+makePool();
+</script>
+</body>
+</html>
